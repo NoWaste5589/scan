@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datum Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.0/dist/tesseract.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Datum Scanner</h1>
+
+    <!-- Bild-Upload -->
+    <input type="file" id="imageUpload" accept="image/*">
+    <button id="scanButton">Scan Bild und Datum</button>
+
+    <!-- Ergebnisbereich -->
+    <div id="result">Erkanntes Datum: </div>
+
+    <script>
+        // Referenz auf die HTML-Elemente
+        const scanButton = document.getElementById('scanButton');
+        const imageUpload = document.getElementById('imageUpload');
+        const resultDiv = document.getElementById('result');
+
+        // Button-Klick Ereignis
+        scanButton.addEventListener('click', () => {
+            const imageFile = imageUpload.files[0];
+            if (!imageFile) {
+                alert("Bitte wähle ein Bild aus.");
+                return;
+            }
+
+            // Bild als Base64 einlesen
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const image = event.target.result;
+                // Datum extrahieren
+                extractDateFromImage(image);
+            };
+            reader.readAsDataURL(imageFile); // Liest das Bild als Base64-URL
+        });
+
+        // Datum extrahieren
+        function extractDateFromImage(image) {
+            Tesseract.recognize(
+                image,
+                'eng',
+                {
+                    logger: (m) => console.log(m),
+                }
+            ).then(({ data: { text } }) => {
+                console.log("Erkannter Text:", text);
+
+                // Regulärer Ausdruck für Datum mit Punkt als Trennzeichen
+                const datePattern = /\b(\d{1,2})[\.\/\-]?\d{1,2}[\.\/\-]?\d{2,4}\b|\b(\d{1,2})[\.\/\-]?\d{4}\b/g;
+
+                const match = text.match(datePattern);
+                if (match) {
+                    resultDiv.textContent = 'Erkanntes Datum: ' + match[0];
+                } else {
+                    resultDiv.textContent = 'Kein Datum gefunden.';
+                }
+            }).catch(err => {
+                console.error("Fehler beim Scannen:", err);
+                resultDiv.textContent = 'Fehler beim Scannen.';
+            });
+        }
+    </script>
+
+</body>
+</html>
